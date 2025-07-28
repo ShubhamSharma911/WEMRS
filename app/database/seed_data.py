@@ -1,119 +1,112 @@
 # app/database/seed_data.py
-
+from passlib.context import CryptContext
 from sqlalchemy import text
+from passlib.hash import bcrypt
 from app.database.connection import get_connection
-from app.repositories import role_repository, emp_category_repository, user_repository
-from app.security.hashing import get_password_hash
-from app.utils.logger import get_logger
 
-logger = get_logger("Seeder")
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-def seed_roles():
-    roles = ["SUPERADMIN", "ADMIN", "EMPLOYEE"]
-    for role in roles:
-        if not role_repository.role_exists(role):
-            role_repository.insert_role(role)
 
-def seed_emp_categories():
-    emp_categories = ["CLASS_1", "CLASS_2", "CLASS_3", "CLASS_4"]
-    for cat in emp_categories:
-        if not emp_category_repository.emp_category_exists(cat):
-            emp_category_repository.insert_emp_category(cat)
+def hash_password(password: str) -> str:
+    return pwd_context.hash(password)
 
-def seed_expense_types():
-    expense_types = ["TRAVEL", "FOOD", "LODGING", "MISC"]
+
+def seed_data():
     with get_connection() as conn:
-        for expense in expense_types:
-            existing = conn.execute(
-                text("SELECT 1 FROM expense_types WHERE name = :name"),
-                {"name": expense}
-            ).fetchone()
-            if not existing:
-                conn.execute(
-                    text("INSERT INTO expense_types (name) VALUES (:name)"),
-                    {"name": expense}
-                )
-        conn.commit()
-
-def seed_expense_statuses():
-    statuses = ["PENDING", "APPROVED", "REJECTED"]
-    with get_connection() as conn:
-        for status in statuses:
-            exists = conn.execute(
-                text("SELECT 1 FROM expense_status WHERE name = :name"),
-                {"name": status}
-            ).fetchone()
-            if not exists:
-                conn.execute(
-                    text("INSERT INTO expense_status (name) VALUES (:name)"),
-                    {"name": status}
-                )
-        conn.commit()
-
-def seed_users():
-    defaults = [
-        {
-            "name": "Super Admin",
-            "email": "shubham.sharma@sofmen.com",
-            "role_name": "SUPERADMIN",
-            "phone": "9691599915"
-        },
-        {
-            "name": "Admin",
-            "email": "ssharma.sofmen@gmail.com",
-            "role_name": "ADMIN",
-            "phone": "8962336802"
-        },
-        {
-            "name": "test_user1",
-            "email": "test_user1@gmail.com",
-            "role_name": "EMPLOYEE",
-            "phone": "9691599916"
-        },
-        {
-            "name": "test_user2",
-            "email": "test_user2@gmail.com",
-            "role_name": "EMPLOYEE",
-            "phone": "9691599917"
-        },
-        {
-            "name": "test_user3",
-            "email": "test_user3@gmail.com",
-            "role_name": "EMPLOYEE",
-            "phone": "9691599918"
-        }
-    ]
-
-    hashed_password = get_password_hash("default")
-
-    for user in defaults:
-        with get_connection() as conn:
-            role_id = conn.execute(
-                text("SELECT id FROM roles WHERE name = :name"),
-                {"name": user["role_name"]}
-            ).scalar()
-            emp_cat_id = conn.execute(
-                text("SELECT id FROM emp_categories WHERE name = 'CLASS_1'")
-            ).scalar()
-
-        existing_user = user_repository.get_user_by_email(user["email"])
-        if not existing_user:
-            user_repository.insert_user(
-                name=user["name"],
-                email=user["email"],
-                phone=user["phone"],
-                hashed_password=hashed_password,
-                role_id=role_id,
-                emp_cat_id=emp_cat_id
+        print("Seeding roles...")
+        roles = ["EMPLOYEE", "ADMIN", "SUPERADMIN"]
+        for role in roles:
+            conn.execute(
+                text("INSERT INTO roles (name) VALUES (:name) ON CONFLICT (name) DO NOTHING"),
+                {"name": role}
             )
 
-def run_seeders():
-    try:
-        seed_roles()
-        seed_emp_categories()
-        seed_expense_types()
-        seed_expense_statuses()
-        seed_users()
-        logger.info("Seeding completed successfully.")
-    except Exception as e:
-        logger.error(f"Error while running seeders: {e}", exc_info=True)
+        print("Seeding employee categories...")
+        categories = ["CLASS_1", "CLASS_2", "CLASS_3", "CLASS_4"]
+        for cat in categories:
+            conn.execute(
+                text("INSERT INTO emp_categories (name) VALUES (:name) ON CONFLICT (name) DO NOTHING"),
+                {"name": cat}
+            )
+
+        print("Seeding expense statuses...")
+        statuses = ["PENDING", "APPROVED", "REJECTED", "REIMBURSED"]
+        for status in statuses:
+            conn.execute(
+                text("INSERT INTO expense_statuses (name) VALUES (:name) ON CONFLICT (name) DO NOTHING"),
+                {"name": status}
+            )
+
+        print("Seeding expense types...")
+        expense_types = [
+            {"name": "TRAVEL"},
+            {"name": "FOOD"},
+            {"name": "HOTEL"},
+            {"name": "OTHER"}
+        ]
+        for et in expense_types:
+            conn.execute(
+                text("INSERT INTO expense_types (name) VALUES (:name) ON CONFLICT (name) DO NOTHING"),
+                et
+            )
+
+        print("Seeding default users...")
+        default_users = [
+            {
+                "name": "Default Employee",
+                "email": "employee@example.com",
+                "phone": "9999999991",
+                "role": "EMPLOYEE",
+                "category": "CLASS_1"
+            },
+            {
+                "name": "Default Admin",
+                "email": "admin@example.com",
+                "phone": "9999999992",
+                "role": "ADMIN",
+                "category": "CLASS_2"
+            },
+            {
+                "name": "Default SuperAdmin",
+                "email": "superadmin@example.com",
+                "phone": "9999999993",
+                "role": "SUPERADMIN",
+                "category": "CLASS_3"
+            }
+        ]
+
+        for user in default_users:
+            # Fetch role and category IDs
+            role_result = conn.execute(
+                text("SELECT id FROM roles WHERE name = :name"),
+                {"name": user["role"]}
+            ).fetchone()
+
+            cat_result = conn.execute(
+                text("SELECT id FROM emp_categories WHERE name = :name"),
+                {"name": user["category"]}
+            ).fetchone()
+
+            if not role_result or not cat_result:
+                print(f"Skipping user {user['email']} due to missing role/category.")
+                continue
+
+            hashed_pwd = bcrypt.hash("password@123")
+
+            conn.execute(
+                text("""
+                    INSERT INTO users (name, email, phone, hashed_password, role_id, emp_category_id)
+                    VALUES (:name, :email, :phone, :hashed_password, :role_id, :category_id)
+                    ON CONFLICT (email) DO NOTHING
+                """),
+                {
+                    "name": user["name"],
+                    "email": user["email"],
+                    "phone": user["phone"],
+                    "hashed_password": hashed_pwd,
+                    "role_id": role_result.id,
+                    "category_id": cat_result.id
+                }
+            )
+        conn.commit()
+        print("Seed data committed.")

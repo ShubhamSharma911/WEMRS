@@ -1,11 +1,10 @@
 from fastapi import HTTPException
 from passlib.context import CryptContext
-from starlette.requests import Request
 import logging
 from app.repositories import user_repository
 from app.models.user_enum import UserRole, EmpCategory
 from app.models.users import User
-from app.schemas.user_schema import UserUpdate, UserCreate, UserUpdateResponse
+from app.schemas.user_schema import UserUpdate, UserUpdateResponse
 from app.utils.user_data_verify import validate_email, validate_phone
 
 logger = logging.getLogger("app.services.user_service")

@@ -5,8 +5,7 @@ from app.utils import logger
 from app.utils.logger import get_logger
 from app.utils.required_role import require_roles, require_self_or_admin
 from app.utils.request_utils import get_current_user_id
-from app.models.user_enum import UserRole, EmpCategory
-import logging
+from app.models.user_enum import UserRole
 
 
 router = APIRouter(prefix="/users", tags=["Users"])
