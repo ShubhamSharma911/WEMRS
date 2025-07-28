@@ -4,20 +4,25 @@ from contextlib import asynccontextmanager
 from app.controllers import user_controller, auth_controller
 from app.utils.logger import get_logger
 from app.database.connection import get_connection
-from app.repositories import role_repository, emp_category_repository, user_repository
-from app.security.hashing import get_password_hash
 import time
 import os
+from app.database.seed_data import (
+    seed_roles, seed_emp_categories, seed_expense_types,
+    seed_expense_statuses, seed_users, run_seeders
+)
+
+
 
 logger = get_logger("API")
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))    # this will store the address of main.py
 SCHEMA_PATH = os.path.join(BASE_DIR, "database", "schema.sql")
 
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     try:
-        # 1. Drop and create tables from schema.sql
         logger.info("Running schema.sql at startup...")
         if os.path.exists(SCHEMA_PATH):
             with open(SCHEMA_PATH, "r") as f:
@@ -29,87 +34,13 @@ async def lifespan(app: FastAPI):
         else:
             logger.error(f"Schema file not found at: {SCHEMA_PATH}")
 
-        # 2. Seed Roles
-        roles = ["SUPERADMIN", "ADMIN", "EMPLOYEE"]
-        for role in roles:
-            if not role_repository.role_exists(role):
-                role_repository.insert_role(role)
+        # Call all seeders from a clean function
+        run_seeders()
 
-        # 3. Seed Employee Categories (match EmpCategory Enum)
-        emp_categories = ["CLASS_1", "CLASS_2", "CLASS_3", "CLASS_4"]
-        for cat in emp_categories:
-            if not emp_category_repository.emp_category_exists(cat):
-                emp_category_repository.insert_emp_category(cat)
-
-        # 4. Seed Default Users
-        defaults = [
-            {
-                "name": "Super Admin",
-                "email": "shubham.sharma@sofmen.com",
-                "role_name": "SUPERADMIN",
-                "phone": "9691599915"
-            },
-            {
-                "name": "Admin",
-                "email": "ssharma.sofmen@gmail.com",
-                "role_name": "ADMIN",
-                "phone": "8962336802"
-            },
-            {
-                "name": "test_user1",
-                "email": "test_user1@gmail.com",
-                "role_name": "EMPLOYEE",
-                "phone": "9691599916"
-            },
-            {
-                "name": "test_user2",
-                "email": "test_user2@gmail.com",
-                "role_name": "EMPLOYEE",
-                "phone": "9691599917"
-            },
-            {
-                "name": "test_user3",
-                "email": "test_user3@gmail.com",
-                "role_name": "EMPLOYEE",
-                "phone": "9691599918"
-            }
-
-        ]
-
-        hashed_password = get_password_hash("default")
-
-        for user in defaults:
-            # Get role_id for user
-            with get_connection() as conn:
-                role_id = conn.execute(
-                    text("SELECT id FROM roles WHERE name = :name"),
-                    {"name": user["role_name"]}
-                ).scalar()
-
-            # Get default emp_category_id (CLASS_1)
-            with get_connection() as conn:
-                emp_cat_id = conn.execute(
-                    text("SELECT id FROM emp_categories WHERE name = 'CLASS_1'")
-                ).scalar()
-
-            # Check if user already exists
-            existing_user = user_repository.get_user_by_email(user["email"])
-            if not existing_user:
-                user_repository.insert_user(
-                    name=user["name"],
-                    email=user["email"],
-                    phone=user["phone"],
-                    hashed_password=hashed_password,
-                    role_id=role_id,
-                    emp_cat_id=emp_cat_id
-                )
-
-        logger.info("Default roles, categories, and users seeded successfully.")
     except Exception as e:
         logger.error(f"Startup error: {e}", exc_info=True)
 
     yield
-    # Optional shutdown logic here
 
 
 # FastAPI app
