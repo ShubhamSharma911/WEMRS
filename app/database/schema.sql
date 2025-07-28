@@ -15,7 +15,6 @@ CREATE TABLE emp_categories (
     name VARCHAR(50) UNIQUE NOT NULL
 );
 
--- Create users table with soft delete, audit fields, and phone
 CREATE TABLE users (
     id SERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL,

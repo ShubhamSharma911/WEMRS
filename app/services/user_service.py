@@ -1,9 +1,15 @@
 from fastapi import HTTPException
 from passlib.context import CryptContext
+from starlette.requests import Request
+import logging
 from app.repositories import user_repository
 from app.models.user_enum import UserRole, EmpCategory
 from app.models.users import User
+from app.schemas.user_schema import UserUpdate, UserCreate, UserUpdateResponse
 from app.utils.user_data_verify import validate_email, validate_phone
+
+logger = logging.getLogger("app.services.user_service")
+
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -18,6 +24,14 @@ def create_user_service(user_data) -> User:
     emp_cat_id = user_repository.get_fk_id("emp_categories", user_data.emp_category.value)
     if not role_id or not emp_cat_id:
         raise HTTPException(status_code=400, detail="Invalid role or emp_category")
+
+    email = user_repository.get_user_by_email(user_data.email)
+    if email:
+        raise HTTPException(status_code=400, detail="Email already registered")
+
+    phone = user_repository.get_user_by_phone(user_data.phone)
+    if phone:
+        raise HTTPException(status_code=400, detail="Phone already registered")
 
     hashed_pw = hash_password(user_data.password)
     user_id = user_repository.insert_user(user_data.name, user_data.email, user_data.phone, hashed_pw, role_id, emp_cat_id)
@@ -43,7 +57,18 @@ def get_user_by_id_service(user_id: int) -> User:
         raise HTTPException(status_code=404, detail="User not found")
     return User(data["id"], data["name"], data["email"], UserRole(data["role"]), EmpCategory(data["emp_category"]))
 
-def update_user_service(user_id: int, update_data) -> None:
+
+
+
+
+def update_user_service(user_id: int, update_data: UserUpdate) -> UserUpdateResponse:
+    logger.info(f"Attempting to update user_id={user_id}")
+    # Check if user exists and is not deleted
+    user = user_repository.get_user_by_id(user_id)
+    if not user:
+        logger.warning(f"User {user_id} not found or is deleted")
+        raise HTTPException(status_code=404, detail="User not found or is deleted")
+
     updates = {}
     if update_data.name is not None:
         updates["name"] = update_data.name
@@ -61,9 +86,17 @@ def update_user_service(user_id: int, update_data) -> None:
         updates["emp_category_id"] = user_repository.get_fk_id("emp_categories", update_data.emp_category.value)
 
     if not updates:
+        logger.warning(f"No valid fields provided to update for user_id={user_id}")
         raise HTTPException(status_code=400, detail="No valid fields to update")
 
-    user_repository.update_user(user_id, updates)
+    logger.debug(f"Update fields: {updates}")
+    updated_user = user_repository.update_user(user_id, updates)
+    if updated_user is None:
+        logger.warning(f"Failed to update user_id={user_id}")
+        raise HTTPException(status_code=404, detail="User not found or update failed")
+
+    logger.info(f"User user_id={user_id} successfully updated")
+    return UserUpdateResponse(**updated_user)
 
 def delete_user_service(user_id: int) -> None:
     if not user_repository.get_user_by_id(user_id):

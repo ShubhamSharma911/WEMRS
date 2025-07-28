@@ -11,7 +11,7 @@ import os
 
 logger = get_logger("API")
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))    # this will store the address of main.py
 SCHEMA_PATH = os.path.join(BASE_DIR, "database", "schema.sql")
 
 @asynccontextmanager
@@ -30,21 +30,50 @@ async def lifespan(app: FastAPI):
             logger.error(f"Schema file not found at: {SCHEMA_PATH}")
 
         # 2. Seed Roles
-        roles = ["Superadmin", "Admin", "User"]
+        roles = ["SUPERADMIN", "ADMIN", "EMPLOYEE"]
         for role in roles:
             if not role_repository.role_exists(role):
                 role_repository.insert_role(role)
 
-        # 3. Seed Employee Categories
-        emp_categories = ["Class-1", "Class-2", "Class-3", "Class-4"]
+        # 3. Seed Employee Categories (match EmpCategory Enum)
+        emp_categories = ["CLASS_1", "CLASS_2", "CLASS_3", "CLASS_4"]
         for cat in emp_categories:
             if not emp_category_repository.emp_category_exists(cat):
                 emp_category_repository.insert_emp_category(cat)
 
         # 4. Seed Default Users
         defaults = [
-            {"name": "Super Admin", "email": "shubham.sharma@sofmen.com", "role_name": "Superadmin", "phone": "9999999999"},
-            {"name": "Admin", "email": "ssharma.sofmen@gmail.com", "role_name": "Admin", "phone": "8888888888"}
+            {
+                "name": "Super Admin",
+                "email": "shubham.sharma@sofmen.com",
+                "role_name": "SUPERADMIN",
+                "phone": "9691599915"
+            },
+            {
+                "name": "Admin",
+                "email": "ssharma.sofmen@gmail.com",
+                "role_name": "ADMIN",
+                "phone": "8962336802"
+            },
+            {
+                "name": "test_user1",
+                "email": "test_user1@gmail.com",
+                "role_name": "EMPLOYEE",
+                "phone": "9691599916"
+            },
+            {
+                "name": "test_user2",
+                "email": "test_user2@gmail.com",
+                "role_name": "EMPLOYEE",
+                "phone": "9691599917"
+            },
+            {
+                "name": "test_user3",
+                "email": "test_user3@gmail.com",
+                "role_name": "EMPLOYEE",
+                "phone": "9691599918"
+            }
+
         ]
 
         hashed_password = get_password_hash("default")
@@ -57,6 +86,12 @@ async def lifespan(app: FastAPI):
                     {"name": user["role_name"]}
                 ).scalar()
 
+            # Get default emp_category_id (CLASS_1)
+            with get_connection() as conn:
+                emp_cat_id = conn.execute(
+                    text("SELECT id FROM emp_categories WHERE name = 'CLASS_1'")
+                ).scalar()
+
             # Check if user already exists
             existing_user = user_repository.get_user_by_email(user["email"])
             if not existing_user:
@@ -66,7 +101,7 @@ async def lifespan(app: FastAPI):
                     phone=user["phone"],
                     hashed_password=hashed_password,
                     role_id=role_id,
-                    emp_cat_id=1  # Default to Class-1
+                    emp_cat_id=emp_cat_id
                 )
 
         logger.info("Default roles, categories, and users seeded successfully.")
@@ -75,6 +110,7 @@ async def lifespan(app: FastAPI):
 
     yield
     # Optional shutdown logic here
+
 
 # FastAPI app
 app = FastAPI(title="WEMRS - Workforce Expense Management", lifespan=lifespan)
