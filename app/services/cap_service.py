@@ -6,7 +6,7 @@ from app.factories.capping_strategy_factory import get_capping_strategy
 from app.utils.logger import get_logger
 
 logger = get_logger("CapService")
-git add .
+
 class CapService:
     def __init__(self, db: Session):
         self.db = db

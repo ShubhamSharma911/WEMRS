@@ -8,6 +8,8 @@ from app.database.connection import get_connection
 from app.database.seed_data import seed_data
 import time
 import os
+from app.controllers import cap_controller
+
 
 logger = get_logger("API")
 
@@ -63,6 +65,4 @@ async def log_requests(request: Request, call_next):
 # Register routers
 app.include_router(user_controller.router)
 app.include_router(auth_controller.router)
-# You can include more controllers as they are added
-# app.include_router(expense_type_controller.router)
-# app.include_router(expense_receipt_controller.router)
+app.include_router(cap_controller.router)

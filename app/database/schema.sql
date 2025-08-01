@@ -2,11 +2,13 @@
 DROP TABLE IF EXISTS expense_issues CASCADE;
 DROP TABLE IF EXISTS expense_receipts CASCADE;
 DROP TABLE IF EXISTS travel_tickets CASCADE;
+DROP TABLE IF EXISTS expense_caps CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
 DROP TABLE IF EXISTS roles CASCADE;
 DROP TABLE IF EXISTS emp_categories CASCADE;
 DROP TABLE IF EXISTS expense_types CASCADE;
 DROP TABLE IF EXISTS expense_statuses CASCADE;
+
 
 -- Create lookup/reference tables first
 CREATE TABLE roles (
@@ -88,4 +90,17 @@ CREATE TABLE travel_tickets (
     status VARCHAR(50) DEFAULT 'raised',
     created_at TIMESTAMP DEFAULT NOW(),
     CONSTRAINT fk_travel_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+
+CREATE TABLE expense_caps (
+    id SERIAL PRIMARY KEY,
+    emp_category_id INT NOT NULL,
+    expense_type_id INT NOT NULL,
+    cap_amount NUMERIC(10, 2) NOT NULL,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW(),
+    CONSTRAINT fk_emp_cat_cap FOREIGN KEY (emp_category_id) REFERENCES emp_categories(id) ON DELETE CASCADE,
+    CONSTRAINT fk_expense_type_cap FOREIGN KEY (expense_type_id) REFERENCES expense_types(id) ON DELETE CASCADE,
+    UNIQUE (emp_category_id, expense_type_id)
 );
