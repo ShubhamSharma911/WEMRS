@@ -1,4 +1,5 @@
 # app/database/seed_data.py
+
 from passlib.context import CryptContext
 from sqlalchemy import text
 from passlib.hash import bcrypt

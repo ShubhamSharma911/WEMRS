@@ -1,4 +1,7 @@
+#app/repositories/role_repository.py
+
 from sqlalchemy import text
+
 from app.database.connection import get_connection
 
 def role_exists(name: str):

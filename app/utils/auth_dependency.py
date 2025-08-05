@@ -1,3 +1,5 @@
+#app/utils/auth_dependency.py
+
 from fastapi import Request, HTTPException, status, Depends
 from app.utils.jwt_utils import decode_jwt_token
 from app.utils.logger import get_logger

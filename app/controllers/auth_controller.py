@@ -1,3 +1,5 @@
+#app/controllers/auth_controller.py
+
 from fastapi import APIRouter
 from app.schemas.auth_schema import LoginRequest, TokenResponse
 from app.services import auth_service

@@ -1,3 +1,5 @@
+#app/models/users.py
+
 from app.models.user_enum import UserRole, EmpCategory
 
 class User:

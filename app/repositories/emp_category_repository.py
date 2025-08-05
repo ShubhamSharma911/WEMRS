@@ -1,3 +1,6 @@
+#app/repositories/emp_category_repository.py
+
+
 from sqlalchemy import text
 from app.database.connection import get_connection
 

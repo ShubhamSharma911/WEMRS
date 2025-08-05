@@ -1,3 +1,4 @@
+
 from sqlalchemy import text
 from app.database.connection import get_connection
 from app.models.user_enum import UserRole, EmpCategory

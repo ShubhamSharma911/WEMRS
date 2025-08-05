@@ -1,3 +1,6 @@
+#app/models/user_enum.py
+
+
 from enum import Enum
 
 class UserRole(str, Enum):

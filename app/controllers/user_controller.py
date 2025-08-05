@@ -1,4 +1,4 @@
-#app.controller.user_controller.py
+#app/controller/user_controller.py
 from fastapi import APIRouter, status, Request, Body
 from app.schemas.user_schema import UserCreate, UserResponse, UserUpdate
 from app.services import user_service
