@@ -1,3 +1,4 @@
+# app/.gitignore
 __pycache__/
 *.pyc
 *.pyo
@@ -7,3 +8,4 @@ logs/
 .vscode/
 .env
 .venv1/
+uploaded_receipts/

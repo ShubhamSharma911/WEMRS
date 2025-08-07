@@ -1,29 +1,13 @@
 annotated-types==0.7.0
 anyio==4.9.0
-bcrypt==4.3.0
-click==8.2.1
+bcrypt @ file:///private/var/folders/sy/f16zz6x50xz3113nwtb9bvq00000gp/T/abs_0c0dthfief/croot/bcrypt_1747402781362/work
+click @ file:///private/var/folders/c_/qfmhj66j0tn016nkx_th4hxm0000gp/T/abs_060m0m8my8/croot/click_1754477944034/work
 dnspython==2.7.0
 ecdsa==0.19.1
 email_validator==2.2.0
-fastapi==0.116.0
-greenlet==3.2.3
-h11==0.16.0
 idna==3.10
-passlib==1.7.4
-psycopg2-binary==2.9.10
-pyasn1==0.6.1
-pydantic==2.11.7
-pydantic-settings==2.2.1
 pydantic_core==2.33.2
-PyJWT==2.10.1
-python-dotenv==1.1.1
-python-jose==3.5.0
-python-multipart==0.0.20
-rsa==4.9.1
 six==1.17.0
 sniffio==1.3.1
-SQLAlchemy==2.0.41
-starlette==0.46.2
 typing-inspection==0.4.1
 typing_extensions==4.14.1
-uvicorn==0.35.0
