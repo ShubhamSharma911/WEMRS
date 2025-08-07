@@ -1,8 +1,9 @@
+# app/main.py
 from fastapi import FastAPI, Request
 from passlib.context import CryptContext
 from sqlalchemy import text
 from contextlib import asynccontextmanager
-from app.controllers import user_controller, auth_controller
+from app.controllers import user_controller, auth_controller, upload_controller
 from app.utils.logger import get_logger
 from app.database.connection import get_connection
 from app.database.seed_data import seed_data
@@ -66,3 +67,4 @@ async def log_requests(request: Request, call_next):
 app.include_router(user_controller.router)
 app.include_router(auth_controller.router)
 app.include_router(cap_controller.router)
+app.include_router(upload_controller.router)

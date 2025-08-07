@@ -4,14 +4,15 @@
 -- DROP in reverse dependency order
 DROP TABLE IF EXISTS expense_issues CASCADE;
 DROP TABLE IF EXISTS travel_tickets CASCADE;
-DROP TABLE IF EXISTS expense_receipts CASCADE;
 DROP TABLE IF EXISTS sub_expense_types CASCADE;
+DROP TABLE IF EXISTS expense_receipts CASCADE;
 DROP TABLE IF EXISTS expense_caps CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
 DROP TABLE IF EXISTS roles CASCADE;
 DROP TABLE IF EXISTS emp_categories CASCADE;
 DROP TABLE IF EXISTS expense_types CASCADE;
 DROP TABLE IF EXISTS expense_statuses CASCADE;
+
 
 
 -- Create lookup/reference tables first
@@ -35,19 +36,7 @@ CREATE TABLE expense_types (
     name VARCHAR(100) UNIQUE NOT NULL
 );
 
--- Now create sub_expense_types table
-
-CREATE TABLE sub_expense_types(
-  id SERIAL PRIMARY KEY,
-  name VARCHAR(100) UNIQUE NOT NULL,
-  expense_type_id INT NOT NULL,
-  created_from_receipt_id INT NOT NULL,
-  created_at TIMESTAMP DEFAULT NOW(),
-  CONSTRAINT fk_Expense_type_sub FOREIGN KEY (expense_type_id) REFERENCES expense_types(id) ON DELETE CASCADE,
-  CONSTRAINT fk_receipt_origin FOREIGN KEY (created_from_receipt_id) REFERENCES expense_receipts(id) ON DELETE CASCADE
-);
-
--- Now create users table
+-- Create users table (others depend on this)
 CREATE TABLE users (
     id SERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
@@ -64,8 +53,7 @@ CREATE TABLE users (
     CONSTRAINT fk_emp_cat FOREIGN KEY (emp_category_id) REFERENCES emp_categories(id) ON DELETE RESTRICT
 );
 
--- Create expense_receipts table
-
+-- Create expense_receipts table (now users already exists)
 CREATE TABLE expense_receipts (
     id SERIAL PRIMARY KEY,
     user_id INT NOT NULL,
@@ -82,9 +70,24 @@ CREATE TABLE expense_receipts (
     CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     CONSTRAINT fk_expense_type FOREIGN KEY (expense_type_id) REFERENCES expense_types(id) ON DELETE RESTRICT,
     CONSTRAINT fk_status FOREIGN KEY (status_id) REFERENCES expense_statuses(id) ON DELETE RESTRICT,
-    CONSTRAINT fk_approver FOREIGN KEY (approved_by) REFERENCES users(id) ON DELETE SET NULL,
-    CONSTRAINT fk_sub_expense_type FOREIGN KEY (sub_expense_type_id) REFERENCES sub_expense_types(id) ON DELETE SET NULL
+    CONSTRAINT fk_approver FOREIGN KEY (approved_by) REFERENCES users(id) ON DELETE SET NULL
+    -- Don't add sub_expense_type yet; defined later
 );
+
+-- Now create sub_expense_types table (after receipts)
+CREATE TABLE sub_expense_types(
+  id SERIAL PRIMARY KEY,
+  name VARCHAR(100) UNIQUE NOT NULL,
+  expense_type_id INT NOT NULL,
+  created_from_receipt_id INT NOT NULL,
+  created_at TIMESTAMP DEFAULT NOW(),
+  CONSTRAINT fk_Expense_type_sub FOREIGN KEY (expense_type_id) REFERENCES expense_types(id) ON DELETE CASCADE,
+  CONSTRAINT fk_receipt_origin FOREIGN KEY (created_from_receipt_id) REFERENCES expense_receipts(id) ON DELETE CASCADE
+);
+
+-- Now go back and add the missing FK constraint to expense_receipts (if your engine supports it)
+ALTER TABLE expense_receipts
+ADD CONSTRAINT fk_sub_expense_type FOREIGN KEY (sub_expense_type_id) REFERENCES sub_expense_types(id) ON DELETE SET NULL;
 
 -- Create expense_issues table
 CREATE TABLE expense_issues (
@@ -111,7 +114,7 @@ CREATE TABLE travel_tickets (
     CONSTRAINT fk_travel_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
-
+-- Create expense_caps table
 CREATE TABLE expense_caps (
     id SERIAL PRIMARY KEY,
     emp_category_id INT NOT NULL,
